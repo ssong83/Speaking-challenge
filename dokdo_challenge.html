@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokdo Class Speaking Challenge</title>
+    <!-- Canvas Confetti Library for Fireworks Effect -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; font-size: 24px; margin-bottom: 15px; }
+        
+        /* Name Input Box */
+        .name-box {
+            margin-bottom: 20px;
+        }
+        .name-box input {
+            padding: 8px 15px;
+            font-size: 16px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+            width: 60%;
+        }
+
+        .instruction {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* 3 Sentences List Box */
+        .sentence-list {
+            margin: 15px 0;
+            text-align: left;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 1px solid #e9ecef;
+        }
+        .sentence-item {
+            font-size: 18px;
+            color: #6c757d;
+            padding: 8px 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        /* 현재 활성화된 문장은 20% 더 크게 (18px -> 약 22px) */
+        .sentence-item.active {
+            background: #e7f1ff;
+            color: #007bff;
+            font-weight: bold;
+            font-size: 22px; 
+            border-left: 5px solid #007bff;
+        }
+        .sentence-item.completed {
+            color: #28a745;
+            text-decoration: line-through;
+        }
+
+        .score-board {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .count-display {
+            font-size: 32px;
+            color: #dc3545;
+            font-weight: bold;
+            margin: 2px 0 10px 0;
+        }
+
+        /* Star Container (15 Stars - 50% larger, multi-line support) */
+        .star-container {
+            font-size: 33px; /* 기존 22px에서 50% 확대 */
+            margin: 10px 0 20px 0;
+            letter-spacing: 4px;
+            line-height: 1.4;
+            word-break: break-all;
+            padding: 0 10px;
+        }
+        .star {
+            color: #e0e0e0; /* Unfilled grey star */
+            transition: color 0.3s;
+        }
+        .star.filled {
+            color: #ffc107; /* Filled gold star */
+        }
+
+        .btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: 0.2s;
+            width: 100%;
+        }
+        .btn:disabled { background-color: #bbb; cursor: not-allowed; }
+        .btn.listening { background-color: #dc3545; animation: pulse 1.5s infinite; }
+        .status-text { margin-top: 15px; color: #666; font-size: 14px; min-height: 24px; }
+
+        /* Weekly Attendance Tracker Table */
+        .tracker-table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+            background: #fafafa;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .tracker-table th, .tracker-table td {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 14px;
+        }
+        .tracker-table th {
+            background-color: #f1f3f5;
+            color: #333;
+        }
+        .check-mark {
+            font-size: 20px;
+            color: #28a745;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗣️ Dokdo Class Speaking Challenge</h1>
+    
+    <!-- Name Input Section -->
+    <div class="name-box">
+        <input type="text" id="studentName" placeholder="Enter your name" onchange="saveName()">
+    </div>
+
+    <p class="instruction">Read the sentences below out loud (5 times each)!</p>
+    
+    <!-- 3 Sentences Display Box -->
+    <div class="sentence-list" id="sentenceListContainer">
+        <div class="sentence-item active" id="item-0">1. 나는 사과를 먹어요</div>
+        <div class="sentence-item" id="item-1">2. 나는 학교에 가요</div>
+        <div class="sentence-item" id="item-2">3. 나는 청소를 해요</div>
+    </div>
+    
+    <!-- Ordered Interface: 1) Goal -> 2) Count -> 3) Stars -> 4) Button -->
+    <div class="score-board">
+        Goal: repeat 5 times
+    </div>
+    <div class="count-display"><span id="currentCount">0</span> / 5</div>
+
+    <!-- 15 Stars Visualizer (Enlarged & multi-line) -->
+    <div class="star-container" id="starContainer">
+        <!-- JavaScript will generate 15 empty stars here -->
+    </div>
+
+    <button class="btn" id="startBtn" onclick="toggleListening()">🎤 Start Speaking</button>
+    <div class="status-text" id="statusText">Click the button and allow microphone access.</div>
+
+    <!-- 5x2 Attendance Tracker Table -->
+    <table class="tracker-table">
+        <thead>
+            <tr>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="day-Mon"></td>
+                <td id="day-Tue"></td>
+                <td id="day-Wed"></td>
+                <td id="day-Thu"></td>
+                <td id="day-Fri"></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const missionSentences = [
+        { text: "나는 사과를 먹어요", keywords: ["사과", "먹어요", "먹어"] },
+        { text: "나는 학교에 가요", keywords: ["학교", "가요", "가"] },
+        { text: "나는 청소를 해요", keywords: ["청소", "해요", "해"] }
+    ];
+    
+    let currentIdx = 0;
+    let count = 0;
+    const maxCount = 5;
+    let totalScore = 0; // Accumulated count (0 to 15)
+    let isListening = false;
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+
+    // Initialize on page load
+    window.onload = function() {
+        loadProgress();
+        createStars();
+        const savedName = localStorage.getItem('dokdo_student_name');
+        if (savedName) {
+            document.getElementById('studentName').value = savedName;
+        }
+    };
+
+    function saveName() {
+        const name = document.getElementById('studentName').value;
+        localStorage.setItem('dokdo_student_name', name);
+    }
+
+    // Generate 15 empty stars initially
+    function createStars() {
+        const container = document.getElementById('starContainer');
+        container.innerHTML = '';
+        for (let i = 0; i < 15; i++) {
+            const span = document.createElement('span');
+            span.className = 'star';
+            span.id = `star-${i}`;
+            span.innerText = '★';
+            container.appendChild(span);
+        }
+    }
+
+    // Color stars one by one as totalScore increases
+    function updateStars() {
+        for (let i = 0; i < 15; i++) {
+            const star = document.getElementById(`star-${i}`);
+            if (i < totalScore) {
+                star.classList.add('filled');
+            } else {
+                star.classList.remove('filled');
+            }
+        }
+    }
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'ko-KR';
+
+        recognition.onresult = function(event) {
+            const resultText = event.results[event.results.length - 1][0].transcript.trim();
+            document.getElementById('statusText').innerText = `Recognized: "${resultText}"`;
+            checkSentence(resultText);
+        };
+
+        recognition.onerror = function(event) {
+            console.error(event.error);
+            if(event.error === 'not-allowed') {
+                document.getElementById('statusText').innerText = "⚠️ Microphone access denied. Please allow permission in the address bar.";
+            }
+        };
+
+        recognition.onend = function() {
+            if (isListening) recognition.start();
+        };
+    } else {
+        alert("Speech recognition is not supported in this browser. Please use Google Chrome or Safari.");
+        document.getElementById('startBtn').disabled = true;
+    }
+
+    function toggleListening() {
+        if (!recognition) return;
+        
+        const btn = document.getElementById('startBtn');
+        if (!isListening) {
+            isListening = true;
+            recognition.start();
+            btn.innerText = "🛑 Stop";
+            btn.classList.add('listening');
+            document.getElementById('statusText').innerText = "Listening... Read the sentence clearly!";
+        } else {
+            isListening = false;
+            recognition.stop();
+            btn.innerText = "🎤 Start Speaking";
+            btn.classList.remove('listening');
+            document.getElementById('statusText').innerText = "Stopped listening.";
+        }
+    }
+
+    function checkSentence(saidText) {
+        const currentMission = missionSentences[currentIdx];
+        const isMatched = currentMission.keywords.some(keyword => saidText.includes(keyword));
+        
+        if (isMatched) {
+            count++;
+            totalScore++;
+            document.getElementById('currentCount').innerText = count;
+            updateStars(); // Fill one star on each success
+            document.getElementById('statusText').innerHTML = "<b style='color:green;'>Great job! 🎉</b>";
+            
+            if (count >= maxCount) {
+                // Mark current sentence as completed visually
+                document.getElementById(`item-${currentIdx}`).classList.remove('active');
+                document.getElementById(`item-${currentIdx}`).classList.add('completed');
+
+                setTimeout(() => {
+                    alert(`Awesome! Completed 5 repetitions for sentence #${currentIdx + 1}!`);
+                    nextStage();
+                }, 300);
+            }
+        } else {
+            document.getElementById('statusText').innerHTML = "<b style='color:orange;'>Try reading it again loudly! 😊</b>";
+        }
+    }
+
+    function nextStage() {
+        count = 0;
+        document.getElementById('currentCount').innerText = count;
+        currentIdx++;
+        
+        if (currentIdx < missionSentences.length) {
+            // Activate next sentence display
+            document.getElementById(`item-${currentIdx}`).classList.add('active');
+            document.getElementById('statusText').innerText = "Next sentence! Read when ready.";
+        } else {
+            // All Sentences Completed (all 15 stars filled)
+            document.getElementById('statusText').innerText = "All Missions Cleared! You got all 15 stars! 🏆";
+            isListening = false;
+            recognition.stop();
+            const btn = document.getElementById('startBtn');
+            btn.innerText = "👍 Challenge Complete!";
+            btn.disabled = true;
+            btn.classList.remove('listening');
+
+            // Trigger Fireworks & Record Today's Attendance
+            launchFireworks();
+            recordTodaySuccess();
+        }
+    }
+
+    // Fireworks effect function
+    function launchFireworks() {
+        var duration = 3 * 1000;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 999 };
+
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+
+    function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    // Date recognition & weekly tracker logic
+    const dayMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    function recordTodaySuccess() {
+        const todayIndex = new Date().getDay();
+        const todayName = dayMap[todayIndex];
+
+        if (todayName !== "Sun" && todayName !== "Sat") {
+            let records = JSON.parse(localStorage.getItem('dokdo_weekly_records')) || {};
+            records[todayName] = true;
+            localStorage.setItem('dokdo_weekly_records', JSON.stringify(records));
+            renderTable(records);
+        }
+    }
+
+    function loadProgress() {
+        let records = JSON.parse(localStorage.getItem('dokdo_weekly_records')) || {};
+        renderTable(records);
+    }
+
+    function renderTable(records) {
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+        days.forEach(day => {
+            const cell = document.getElementById(`day-${day}`);
+            if (records[day]) {
+                cell.innerHTML = '<span class="check-mark">✅</span>';
+            } else {
+                cell.innerHTML = '';
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
