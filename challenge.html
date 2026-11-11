@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokdo Class Speaking Challenge</title>
+  <style>
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 1.6rem; color: #1e3a8a; margin-bottom: 10px; }
+    .sentences {
+      text-align: left;
+      background: #f8fafc;
+      padding: 15px 20px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      line-height: 1.8;
+      margin: 15px 0;
+    }
+    input[type="text"] {
+      padding: 12px;
+      font-size: 1rem;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      width: 60%;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { background-color: #1d4ed8; }
+    button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+    .status {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #059669;
+      min-height: 24px;
+    }
+    .leaderboard-title {
+      font-size: 1.3rem;
+      color: #1e3a8a;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th { background-color: #f1f5f9; color: #475569; }
+    .rank-1 { font-weight: bold; color: #d97706; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>🗣 Dokdo Class Speaking Challenge</h1>
+    <p>이름을 입력하고 아래 문장 중 하나를 크게 읽어보세요!</p>
+
+    <input type="text" id="studentName" placeholder="이름 입력 (예: 김철수)">
+
+    <div class="sentences">
+      <div>1. 나는 사과를 먹어요</div>
+      <div>2. 나는 학교에 가요</div>
+      <div>3. 나는 청소를 해요</div>
+    </div>
+
+    <button id="micBtn" onclick="startRecognition()">🎤 말하기 시작</button>
+    <div class="status" id="statusMsg">버튼을 누르고 마이크를 허용해 주세요.</div>
+  </div>
+
+  <div class="card">
+    <div class="leaderboard-title">🏆 실시간 우리 반 랭킹</div>
+    <table>
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>이름</th>
+          <th>성공 횟수 (⭐)</th>
+        </tr>
+      </thead>
+      <tbody id="rankingBody">
+        <tr><td colspan="3">랭킹 불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // ★ 아래 따옴표 안에 1단계에서 복사한 구글 웹 앱 URL을 붙여넣으세요!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6NA9CK4IVyDhmgXy8XdXymEWE-_S2F35d9vBiFyJdQvwo2I5Ex1PzgNzpHyVlcQya/exec";
+
+    const targetSentences = [
+      "나는사과를먹어요",
+      "나는학교에가요",
+      "나는청소를해요"
+    ];
+
+    // 페이지 열릴 때 랭킹 불러오기
+    window.onload = () => {
+      const savedName = localStorage.getItem("dokdo_student_name");
+      if (savedName) document.getElementById("studentName").value = savedName;
+      fetchRankings();
+    };
+
+    function startRecognition() {
+      const nameInput = document.getElementById("studentName").value.trim();
+      if (!nameInput) {
+        alert("먼저 이름을 입력해 주세요!");
+        return;
+      }
+      localStorage.setItem("dokdo_student_name", nameInput);
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다. 크롬(Chrome)을 사용해 주세요.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ko-KR';
+      recognition.interimResults = false;
+
+      const micBtn = document.getElementById("micBtn");
+      const statusMsg = document.getElementById("statusMsg");
+
+      recognition.onstart = () => {
+        micBtn.disabled = true;
+        micBtn.innerText = "👂 듣는 중...";
+        statusMsg.style.color = "#2563eb";
+        statusMsg.innerText = "문장을 또박또박 읽어주세요!";
+      };
+
+      recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        const cleanSpoken = spokenText.replace(/[\s.,!?]/g, "");
+
+        if (targetSentences.includes(cleanSpoken)) {
+          statusMsg.style.color = "#059669";
+          statusMsg.innerText = `🎉 성공! ("${spokenText}") 점수 기록 중...`;
+          addPoint(nameInput);
+        } else {
+          statusMsg.style.color = "#dc2626";
+          statusMsg.innerText = `😅 다시 해볼까요? 인식된 말: "${spokenText}"`;
+        }
+      };
+
+      recognition.onerror = () => {
+        statusMsg.style.color = "#dc2626";
+        statusMsg.innerText = "마이크 오류 또는 소리가 들리지 않았습니다.";
+      };
+
+      recognition.onend = () => {
+        micBtn.disabled = false;
+        micBtn.innerText = "🎤 말하기 시작";
+      };
+
+      recognition.start();
+    }
+
+    function addPoint(name) {
+      fetch(`${SCRIPT_URL}?action=add&name=${encodeURIComponent(name)}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("statusMsg").innerText = "⭐ 별 1개 적립 완료!";
+          renderTable(data);
+        })
+        .catch(err => {
+          document.getElementById("statusMsg").innerText = "서버 저장 실패 (URL을 확인해 주세요)";
+        });
+    }
+
+    function fetchRankings() {
+      if (SCRIPT_URL.includes("여기에_웹앱_URL")) return;
+      fetch(SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => renderTable(data));
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("rankingBody");
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">아직 기록이 없습니다. 첫 번째 주인공이 되어보세요!</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map((row, idx) => `
+        <tr class="${idx === 0 ? 'rank-1' : ''}">
+          <td>${idx === 0 ? '🥇 1위' : (idx + 1) + '위'}</td>
+          <td>${row.name}</td>
+          <td>${row.count}개 ⭐</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
