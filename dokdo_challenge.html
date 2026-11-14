@@ -88,7 +88,7 @@
             margin: 2px 0 10px 0;
         }
 
-        /* Star Container (15 Stars - 50% larger, multi-line support) */
+        /* Star Container (12 Stars - 50% larger, multi-line support) */
         .star-container {
             font-size: 33px; /* 기존 22px에서 50% 확대 */
             margin: 10px 0 20px 0;
@@ -164,24 +164,25 @@
         <input type="text" id="studentName" placeholder="Enter your nickname" onchange="saveName()">
     </div>
 
-    <p class="instruction">Read the sentences below out loud (5 times each)!</p>
+    <p class="instruction">Read the sentences below out loud (3 times each)!</p>
     
-    <!-- 3 Sentences Display Box -->
+    <!-- 4 Sentences Display Box -->
     <div class="sentence-list" id="sentenceListContainer">
-        <div class="sentence-item active" id="item-0">1. 나는 사과를 먹어요</div>
-        <div class="sentence-item" id="item-1">2. 나는 학교에 가요</div>
-        <div class="sentence-item" id="item-2">3. 나는 청소를 해요</div>
+        <div class="sentence-item active" id="item-0">1. 주말에 뭐 해요?</div>
+        <div class="sentence-item" id="item-1">2. 엄마는 한국 노래를 들어요.</div>
+        <div class="sentence-item" id="item-2">3. 리본이 분홍색이예요.</div>
+        <div class="sentence-item" id="item-3">4. 나는 아침에 세수하고 밥먹어요.</div>
     </div>
     
     <!-- Ordered Interface: 1) Goal -> 2) Count -> 3) Stars -> 4) Button -->
     <div class="score-board">
-        Goal: repeat 5 times
+        Goal: repeat 3 times
     </div>
-    <div class="count-display"><span id="currentCount">0</span> / 5</div>
+    <div class="count-display"><span id="currentCount">0</span> / 3</div>
 
-    <!-- 15 Stars Visualizer (Enlarged & multi-line) -->
+    <!-- 12 Stars Visualizer (Enlarged & multi-line) -->
     <div class="star-container" id="starContainer">
-        <!-- JavaScript will generate 15 empty stars here -->
+        <!-- JavaScript will generate 12 empty stars here -->
     </div>
 
     <button class="btn" id="startBtn" onclick="toggleListening()">🎤 Start Speaking</button>
@@ -242,11 +243,11 @@
         localStorage.setItem('dokdo_student_name', name);
     }
 
-    // Generate 15 empty stars initially
+    // Generate 12 empty stars initially
     function createStars() {
         const container = document.getElementById('starContainer');
         container.innerHTML = '';
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 12; i++) {
             const span = document.createElement('span');
             span.className = 'star';
             span.id = `star-${i}`;
@@ -257,7 +258,7 @@
 
     // Color stars one by one as totalScore increases
     function updateStars() {
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 12; i++) {
             const star = document.getElementById(`star-${i}`);
             if (i < totalScore) {
                 star.classList.add('filled');
@@ -330,7 +331,7 @@
                 document.getElementById(`item-${currentIdx}`).classList.add('completed');
 
                 setTimeout(() => {
-                    alert(`Awesome! Completed 5 repetitions for sentence #${currentIdx + 1}!`);
+                    alert(`Awesome! Completed 3 repetitions for sentence #${currentIdx + 1}!`);
                     nextStage();
                 }, 300);
             }
@@ -349,8 +350,8 @@
             document.getElementById(`item-${currentIdx}`).classList.add('active');
             document.getElementById('statusText').innerText = "Next sentence! Read when ready.";
         } else {
-            // All Sentences Completed (all 15 stars filled)
-            document.getElementById('statusText').innerText = "All Missions Cleared! You got all 15 stars! 🏆";
+            // All Sentences Completed (all 12 stars filled)
+            document.getElementById('statusText').innerText = "All Missions Cleared! You got all 12 stars! 🏆";
             isListening = false;
             recognition.stop();
             const btn = document.getElementById('startBtn');
